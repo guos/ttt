@@ -1,0 +1,52 @@
+#!/usr/bin/env ruby
+require 'net/http'
+require 'uri'
+
+$refname = ARGV[0]
+$oldrev  = ARGV[1]
+$newrev  = ARGV[2]
+$user    = ENV['GL_ID']
+
+puts "Enforcing Policies..."
+puts "(#{$refname}) (#{$oldrev[0,6]}) (#{$newrev[0,6]})"
+
+# only allows certain users to modify certain subdirectories in a project
+def check_commit
+  
+  #call api to get user email 
+  uri = URI.parse('http://localhost/api/v4/users/'+#{$user}) 
+  http = Net::HTTP.new(uri.host, uri.port)  
+  headers = {
+    'PRIVATE-TOKEN' => ""
+  }
+ 
+    http.get(uri.path,headers) {|res|
+      print res.body
+    }
+ 
+  
+  # see if anyone is trying to push something they can't
+  new_commits = `git rev-list #{$oldrev}..#{$newrev}`.split("\n")
+  new_commits.each do |commit|
+    emails = `git log -1 --name-only --pretty=format:'%ce' #{commit}`.split("\n")
+    emails.each do |email|
+      next if email!= 0     
+     
+          has_file_access = true
+      
+      end
+      if !has_file_access
+        puts "[POLICY] You do not have permission to push for your email #{email} not the same as commit user[$user]"
+        exit 1
+      end
+    end
+  end
+end
+
+check_commit
+
+
+
+
+ 
+
